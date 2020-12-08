@@ -1,0 +1,19 @@
+{
+  "name": "dotenvyjs",
+  "version": "0.0.1",
+  "description": "Another nodejs dot env (.env) library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/jpolvora/dotenvyjs"
+  },
+  "keywords": [
+    "env",
+    "validation"
+  ],
+  "author": "Jone Polvora",
+  "license": "ISC"
+}
