@@ -15,7 +15,7 @@ npm install --save jpolvora/dotenvyjs
 Create a file named `.env.example` that can be commited and shared across the team. 
 
 Place you keys and values of your application in form of an example / validator.
-The format is `KEY=__validation-string__`
+The format is `KEY=__validation-string__:default`
 
 Check below an example of a `.env.example` file:
 
