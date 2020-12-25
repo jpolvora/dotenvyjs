@@ -26,8 +26,6 @@ CI_ENV=str(,development|production)
 
 All validators are envalid validators.
 
-```
-
 # Usage
 
 ```javascript
