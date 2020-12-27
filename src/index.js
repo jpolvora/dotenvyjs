@@ -1,13 +1,3 @@
-// todo:
-
-// parse options
-// find .env.example from require.main.path
-// parse the file into key=value pairs, ignoring comments
-// loop through keys and for each value, create a midleware chain
-// run middleware chain, and lazily instantiating validators
-// check if each validator exists and execute it
-// return an readonly object
-
 const fs = require('fs')
 const path = require('path')
 const envalid = require('envalid')
@@ -18,7 +8,7 @@ const defaultOptions = {
   strict: true
 }
 
-function getValidator (name) {
+function findValidator (name) {
   if (typeof envalid[name] === 'function') {
     return envalid[name]
   }
@@ -70,44 +60,48 @@ function parseLine (line) {
     const instruction = line.split('#')[0].trim()
     if (instruction.length === 0) return false
     const [key, value] = line.split('=')
-    const result = {
-      key, value
-    }
-    const validatorInfo = getValidatorInfo(value)
-    if (validatorInfo.name) {
-      const validatorExecutor = getValidator(validatorInfo.name)
-      if (validatorExecutor) {
-        const options = {}
-        if (validatorInfo.default) options.default = validatorInfo.default
-        if (validatorInfo.choices) options.choices = validatorInfo.choices
-        result.key = key
-        result.value = validatorExecutor(options)
+    if (key && value) {
+      const result = {
+        key, value
       }
+      const validatorInfo = getValidatorInfo(value)
+      if (validatorInfo && validatorInfo.name) {
+        const validatorFn = findValidator(validatorInfo.name)
+        if (validatorFn) {
+          const options = {}
+          if (validatorInfo.default) options.default = validatorInfo.default
+          if (validatorInfo.choices) options.choices = validatorInfo.choices
+          result.key = key
+          result.value = validatorFn(options)
+        }
+      }
+      return result
     }
-    return result
   } catch (error) {
-    return false
   }
+  return false
 }
 
 function processLineByLine (filename) {
   const cfg = {}
   const contents = fs.readFileSync(filename, 'utf8')
-  const lines = contents.split('\n')
-  for (const line of lines) {
-    const parsedConfig = parseLine(line)
-    if (parsedConfig) {
-      cfg[parsedConfig.key] = parsedConfig.value
+  if (contents) {
+    const lines = contents.split('\n')
+    for (const line of lines) {
+      const parsedConfig = parseLine(line)
+      if (parsedConfig) {
+        cfg[parsedConfig.key] = parsedConfig.value
+      }
     }
   }
 
   return cfg
 }
 
-module.exports = (options) => {
+const main = (options) => {
   try {
     const finalOptions = Object.assign({}, defaultOptions, options)
-    const exampleFileName = path.resolve(finalOptions.dir, finalOptions.exampleFile)
+    const exampleFileName = path.join(finalOptions.dir, finalOptions.exampleFile)
     const config = processLineByLine(exampleFileName)
     const env = envalid.cleanEnv(process.env, config, finalOptions)
     return env
@@ -115,3 +109,5 @@ module.exports = (options) => {
     throw new Error('Error running dotenvyjs: ' + ex)
   }
 }
+
+module.exports = main

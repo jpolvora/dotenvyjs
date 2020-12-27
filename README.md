@@ -1,6 +1,8 @@
 # dotenvyjs
 
-DotEnvyJs is a wrapper utility around envalid and dotconfig
+DotEnvyJs is a wrapper utility around `envalid` and `dotconfig`.
+
+It turns out that this utility reads a .env.example file and converts the instructions into an object that will be sent to `envalid`
 
 ## Installation
 
@@ -13,7 +15,7 @@ npm install --save jpolvora/dotenvyjs
 Create a file named `.env.example` that can be commited and shared across the team.
 
 Place you keys and values of your application in form of an example / validator.
-The format is `KEY=validator_name(defaultValue,choice1|choice2)`
+The format is `ENV_KEY=validator_name(defaultValue,choice1|choice2|choiceN...)`
 
 Check below an example of a `.env.example` file:
 
