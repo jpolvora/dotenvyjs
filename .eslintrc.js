@@ -1,3 +1,5 @@
+const main = require('./src')
+
 module.exports = {
   env: {
     browser: true,
@@ -6,7 +8,8 @@ module.exports = {
     'jest/globals': true
   },
   extends: [
-    'standard'
+    'standard',
+    'plugin:jest/style'
   ],
   parserOptions: {
     ecmaVersion: 12

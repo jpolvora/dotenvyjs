@@ -82,32 +82,43 @@ function parseLine (line) {
   return false
 }
 
-function processLineByLine (filename) {
+function processLineByLine (lines) {
   const cfg = {}
-  const contents = fs.readFileSync(filename, 'utf8')
-  if (contents) {
-    const lines = contents.split('\n')
-    for (const line of lines) {
-      const parsedConfig = parseLine(line)
-      if (parsedConfig) {
-        cfg[parsedConfig.key] = parsedConfig.value
-      }
+  for (const line of lines) {
+    const parsedConfig = parseLine(line)
+    if (parsedConfig) {
+      cfg[parsedConfig.key] = parsedConfig.value
     }
   }
 
   return cfg
 }
 
+function getFileContents (filename) {
+  try {
+    const contents = fs.readFileSync(filename, 'utf8')
+    const lines = contents.split('\n')
+    return lines
+  } catch (error) {
+    throw new Error(`Couldn\'t read file "${filename}": ` + error.message)
+  }
+}
+
 const main = (options) => {
   try {
     const finalOptions = Object.assign({}, defaultOptions, options)
     const exampleFileName = path.join(finalOptions.dir, finalOptions.exampleFile)
-    const config = processLineByLine(exampleFileName)
-    const env = envalid.cleanEnv(process.env, config, finalOptions)
-    return env
+    const lines = getFileContents(exampleFileName)
+    const config = processLineByLine(lines)
+    return envalid.cleanEnv(process.env, config, finalOptions)
   } catch (ex) {
     throw new Error('Error running dotenvyjs: ' + ex)
   }
 }
 
+main.getFileContents = getFileContents
+main.processLineByLine = processLineByLine
+main.parseLine = parseLine
+main.getValidatorInfo = getValidatorInfo
+main.findValidator = findValidator
 module.exports = main
