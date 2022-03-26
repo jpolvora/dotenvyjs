@@ -4,6 +4,7 @@
   "description": "Another nodejs dot env (.env) library",
   "main": "index.js",
   "scripts": {
+    "build": "npx tsc",
     "test": "jest"
   },
   "repository": {
