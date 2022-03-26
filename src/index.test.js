@@ -1,5 +1,4 @@
 const dotenv = require('./index')
-const { str } = require('envalid')
 describe('insert', () => {
   beforeAll(async () => {
     process.env.MY_CONFIG = '123'

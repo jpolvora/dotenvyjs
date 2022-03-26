@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Another nodejs dot env (.env) library",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest"
+  },
   "repository": {
     "type": "git",
     "url": "github.com/jpolvora/dotenvyjs"
