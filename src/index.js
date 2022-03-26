@@ -13,12 +13,14 @@ const path = require('path')
 const envalid = require('envalid')
 
 const defaultOptions = {
+  isPhysicalFile: true,
+  variables: {},
   exampleFile: '.env.example',
   dir: path.resolve('./'),
   strict: true
 }
 
-function getValidator (name) {
+function getValidator(name) {
   if (typeof envalid[name] === 'function') {
     return envalid[name]
   }
@@ -26,7 +28,7 @@ function getValidator (name) {
   return false
 }
 
-function extract ([beg, end]) {
+function extract([beg, end]) {
   const matcher = new RegExp(`\\${beg}(.*?)\\${end}`, 'gm')
   const normalise = (str) => str.slice(beg.length, end.length * -1)
   return function (str) {
@@ -36,7 +38,7 @@ function extract ([beg, end]) {
 
 const parameterExtractor = extract(['(', ')'])
 
-function getValidatorInfo (value) {
+function getValidatorInfo(value) {
   const result = {
     name: '',
     default: false,
@@ -63,7 +65,7 @@ function getValidatorInfo (value) {
   return result
 }
 
-function parseLine (line) {
+function parseLine(line) {
   if (!line) return false
   if (line.trim().length === 0) return false
   try {
@@ -90,9 +92,21 @@ function parseLine (line) {
   }
 }
 
-function processLineByLine (filename) {
+function processLineByLine(filename, isPhysicalFile = false, variables = {}) {
   const cfg = {}
-  const contents = fs.readFileSync(filename, 'utf8')
+  let contents
+  if (isPhysicalFile) {
+    try {
+      contents = fs.readFileSync(filename, 'utf8')
+    } catch {
+      // file not found
+    }
+  } else {
+    const lines = Object.entries(variables).map(x => `${x[0]}=${x[1]}`).toString()
+    contents = lines
+  }
+  if (!contents) return {}
+
   const lines = contents.split('\n')
   for (const line of lines) {
     const parsedConfig = parseLine(line)
@@ -108,7 +122,7 @@ module.exports = (options) => {
   try {
     const finalOptions = Object.assign({}, defaultOptions, options)
     const exampleFileName = path.resolve(finalOptions.dir, finalOptions.exampleFile)
-    const config = processLineByLine(exampleFileName)
+    const config = processLineByLine(exampleFileName, options.isPhysicalFile, options.variables)
     const env = envalid.cleanEnv(process.env, config, finalOptions)
     return env
   } catch (ex) {
