@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs/promises'
-import dotenv from '.'
+import dotenvy from './index'
 
 const envContents = `
 API_KEY=str(000000)
@@ -8,7 +8,8 @@ API_SECRET=str()
 CI_ENV=str(stage,development|production)
 PORT=num(8000)
 DB=num()
-`
+`.trim()
+
 const exampleFileName = path.join(process.cwd(), '.env.tests')
 
 describe('insert', () => {
@@ -22,7 +23,7 @@ describe('insert', () => {
 
   it('it should throw on missing vars', async() => {
 
-    const env = expect(() => dotenv({
+    const env = expect(() => dotenvy({
       exampleFile: exampleFileName
     })).toThrow()
 
@@ -34,8 +35,7 @@ describe('insert', () => {
   })
 
   it('it should set default value', async() => {
-
-    const env = expect(() => dotenv({
+    const env = expect(() => dotenvy({
       exampleFile: exampleFileName
     })).toThrow()
 

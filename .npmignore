@@ -5,3 +5,6 @@
 tsconfig.json
 jest.config.js
 examples
+.github
+.vscode
+src

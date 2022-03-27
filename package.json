@@ -2,8 +2,8 @@
   "name": "dotenvyjs",
   "version": "0.0.2",
   "description": "Another nodejs dot env (.env) library",
-  "main": "./lib/dotenvy.js",
-  "types": "./lib/dotenvy.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "clean": "rm -rf ./lib && rm -rf ./node_modules",
     "build": "tsc --project tsconfig.json",
