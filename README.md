@@ -5,7 +5,7 @@ DotEnvyJs is a wrapper utility around envalid and dotconfig
 ## Installation
 
 ```shell
-npm install --save jpolvora/dotenvyjs
+npm install dotenvyjs
 ```
 
 # WorkFlow
@@ -20,9 +20,11 @@ Check below an example of a `.env.example` file:
 ```env
 # .env.example
 
-API_KEY=str(123)
-CI_ENV=str(,development|production)
+API_KEY=str()
+CI_ENV=str(stage,development|production)
 ```
+
+In the above exemplo, API_KEY is required, with no default value. In this case, when app run, if API_KEY was not found in process.env, application will fail start.
 
 All validators are envalid validators.
 

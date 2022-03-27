@@ -19,6 +19,9 @@
       "request": "launch",
       "name": "Launch Tests",
       "program": "${workspaceRoot}/node_modules/.bin/jest",
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std",
+      "console": "internalConsole",
       "args": [
         "--runInBand",
         "--no-cache"

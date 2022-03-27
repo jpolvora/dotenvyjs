@@ -1,0 +1,7 @@
+# Don't publish source files that aren't needed in package
+*.ts
+!*.d.ts
+!*.js.map
+tsconfig.json
+jest.config.js
+examples

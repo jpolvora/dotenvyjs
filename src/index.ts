@@ -1,18 +1,34 @@
-import fs from "fs";
-import path from "path";
-import * as envalid from "envalid";
+import fs from 'fs'
+import * as envalid from 'envalid'
 
-type DotEnvy = unknown
+const debugging = true
+
+let num: number = 0
+const increment = (): number => num++
+increment()
+
+const Logger = debugging
+  ? {
+      log: console.log.bind(console),
+      error: console.error.bind(console)
+    }
+  : {
+      log: Function.prototype,
+      error: Function.prototype
+    }
 
 type KeyValuePair<T> = { [key: string]: T }
+
+type LooseObject = {
+  [key: string]: any
+}
 
 interface Options {
   isPhysicalFile?: boolean
   lines?: KeyValuePair<string>
   env?: KeyValuePair<string>
   exampleFile?: string
-  dir?: string
-  strict?: boolean
+  envalidOptions?: LooseObject
 }
 
 const defaultOptions: Options = {
@@ -20,14 +36,14 @@ const defaultOptions: Options = {
   lines: {},
   env: {},
   exampleFile: '.env.example',
-  dir: path.resolve('./'),
-  strict: true
+  envalidOptions: {
+    strict: true,
+    reporter: (opts: envalid.ReporterOptions) => {
+      const message = Object.entries(opts.errors).map(x => `${x[0]}: ${x[1]}`).reduce((acc, msg) => (acc += msg))
+      throw new Error(message)
+    }
+  }
 }
-
-interface LooseObject {
-  [key: string]: any
-}
-
 
 type ValidatorInfo = {
   name?: string
@@ -37,21 +53,17 @@ type ValidatorInfo = {
 
 type ValidatorFunction = (options: ValidatorInfo) => string
 
-function checkValidatorExists(name: string): ValidatorFunction | null {
-
-  if (typeof (envalid as any)[name] === 'function')
-    return (envalid as any)[name]
+function checkValidatorExists (name: string): ValidatorFunction | null {
+  if (typeof (envalid as any)[name] === 'function') { return (envalid as any)[name] }
 
   return null
-
 }
 
-type Func<T> = () => T
-type Func2<T, U> = (p: T) => U
+type Func<T, U> = (p: T) => U
 
 const normalise = (str: string, beg: string, end: string) => str.slice(beg.length, end.length * -1)
 
-function extract(beg: string, end: string): Func2<string, string[]> {
+function extract (beg: string, end: string): Func<string, string[]> {
   const matcher = new RegExp(`\\${beg}(.*?)\\${end}`, 'gm')
   return (str) => {
     const m = str.match(matcher)
@@ -60,13 +72,11 @@ function extract(beg: string, end: string): Func2<string, string[]> {
     }
     return []
   }
-
 }
 
 const parameterExtractor = extract('(', ')')
 
-
-function tryGetValidatorInfoFromLine(value: string): ValidatorInfo {
+function tryGetValidatorInfoFromLine (value: string): ValidatorInfo {
   const result: ValidatorInfo = {}
 
   try {
@@ -89,7 +99,7 @@ function tryGetValidatorInfoFromLine(value: string): ValidatorInfo {
   return result
 }
 
-function parseLine(line: string): KeyValuePair<string> | null {
+function parseLine (line: string): KeyValuePair<string> | null {
   if (!line) return null
   if (line.trim().length === 0) return null
   try {
@@ -120,10 +130,7 @@ function parseLine(line: string): KeyValuePair<string> | null {
   }
 }
 
-
-
-function processLineByLine(filename: string, isPhysicalFile: boolean = false, variables = {}): LooseObject | null {
-
+function processLineByLine (filename: string = '', isPhysicalFile: boolean = true, variables = {}): LooseObject | null {
   let contents
   if (isPhysicalFile) {
     try {
@@ -135,7 +142,7 @@ function processLineByLine(filename: string, isPhysicalFile: boolean = false, va
     const entries = Object.entries(variables)
     const lines = []
     for (let i = 0; i < entries.length; i++) {
-      const element = entries[i];
+      const element = entries[i]
       lines.push(`${element[0]}=${element[1]}\n`)
     }
     contents = lines.join('')
@@ -154,16 +161,18 @@ function processLineByLine(filename: string, isPhysicalFile: boolean = false, va
   return cfg
 }
 
-
-export default function dotenvy(options: Options): LooseObject {
+function dotenvy (options: Options = {}): LooseObject {
   try {
     const finalOptions = Object.assign({}, defaultOptions, options)
-    const exampleFileName = finalOptions.dir && finalOptions.exampleFile ? path.resolve(finalOptions.dir, finalOptions.exampleFile) : ''
-    const config = processLineByLine(exampleFileName, options.isPhysicalFile, options.lines)
-    if (options.env) Object.assign(process.env, options.env)
-    const env = envalid.cleanEnv(process.env, config as {}, finalOptions)
+    const config = processLineByLine(finalOptions.exampleFile, finalOptions.isPhysicalFile, finalOptions.lines)
+    if (finalOptions.env) Object.assign(process.env, finalOptions.env)
+    const env = envalid.cleanEnv(process.env, config ? config as {} : {}, finalOptions.envalidOptions)
     return Object.assign({}, { ...env })
   } catch (ex) {
-    throw new Error('Error running dotenvyjs: ' + ex)
+    if (ex instanceof Error) Logger.error(ex.message)
+    else Logger.error(ex)
+    throw ex
   }
 }
+
+export = dotenvy
