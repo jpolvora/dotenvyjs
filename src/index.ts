@@ -1,7 +1,7 @@
 import fs from 'fs'
 import * as envalid from 'envalid'
 
-const debugging = true
+const debugging = process.env.NODE_ENV === 'development'
 
 let num: number = 0
 const increment = (): number => num++
@@ -17,51 +17,57 @@ const Logger = debugging
       error: Function.prototype
     }
 
-type KeyValuePair<T> = { [key: string]: T }
+type KeyValuePair<T> = { [key: string]: T };
 
 type LooseObject = {
-  [key: string]: any
-}
+  [key: string]: any;
+};
 
 interface Options {
-  isPhysicalFile?: boolean
-  lines?: KeyValuePair<string>
-  env?: KeyValuePair<string>
-  exampleFile?: string
-  envalidOptions?: LooseObject
+  isPhysicalFile?: boolean;
+  lines?: KeyValuePair<string>;
+  env?: KeyValuePair<string>;
+  exampleFile?: string;
+  envalidOptions?: LooseObject;
 }
 
 const defaultOptions: Options = {
   isPhysicalFile: true,
-  lines: {},
-  env: {},
   exampleFile: '.env.example',
   envalidOptions: {
-    strict: true,
-    reporter: (opts: envalid.ReporterOptions) => {
-      const message = Object.entries(opts.errors).map(x => `${x[0]}: ${x[1]}`).reduce((acc, msg) => (acc += msg))
-      throw new Error(message)
-    }
+    strict: true
   }
 }
 
-type ValidatorInfo = {
-  name?: string
-  default?: string
-  choices?: string[]
+const customReporter = (opts: envalid.ReporterOptions) => {
+  const entries = Object.entries(opts.errors)
+  if (entries.length === 0) return
+  const message = entries
+    .map((x) => `${x[0]}: ${x[1]}`)
+    .reduce((acc, msg) => (acc += msg))
+  throw new Error(message)
 }
 
-type ValidatorFunction = (options: ValidatorInfo) => string
+type ValidatorInfo = {
+  name?: string;
+  default?: string;
+  choices?: string[];
+};
+
+type ValidatorFunction = (options: ValidatorInfo) => string;
 
 function checkValidatorExists (name: string): ValidatorFunction | null {
-  if (typeof (envalid as any)[name] === 'function') { return (envalid as any)[name] }
+  if (typeof (envalid as any)[name] === 'function') {
+    return (envalid as any)[name]
+  }
 
   return null
 }
 
-type Func<T, U> = (p: T) => U
+type Func<T, U> = (p: T) => U;
 
-const normalise = (str: string, beg: string, end: string) => str.slice(beg.length, end.length * -1)
+const normalise = (str: string, beg: string, end: string) =>
+  str.slice(beg.length, end.length * -1)
 
 function extract (beg: string, end: string): Func<string, string[]> {
   const matcher = new RegExp(`\\${beg}(.*?)\\${end}`, 'gm')
@@ -84,7 +90,9 @@ function tryGetValidatorInfoFromLine (value: string): ValidatorInfo {
     if (params.length > 0) {
       result.name = value.substring(0, value.indexOf('(')).toLowerCase()
       const splited = params[0].split(',')
-      result.default = splited[0]
+      if (splited[0].length > 0) result.default = splited[0]
+      else delete result.default
+
       const choices = splited[1].split('|')
       if (choices.length > 0) {
         result.choices = choices
@@ -92,9 +100,7 @@ function tryGetValidatorInfoFromLine (value: string): ValidatorInfo {
     } else {
       result.name = value
     }
-  } catch (error) {
-
-  }
+  } catch (error) {}
 
   return result
 }
@@ -107,7 +113,8 @@ function parseLine (line: string): KeyValuePair<string> | null {
     if (instruction.length === 0) return null
     const [key, value] = line.split('=')
     const result: KeyValuePair<string> = {
-      key, value
+      key,
+      value
     }
     const validatorInfo = tryGetValidatorInfoFromLine(value)
     if (validatorInfo.name) {
@@ -119,9 +126,7 @@ function parseLine (line: string): KeyValuePair<string> | null {
             result.key = key
             result.value = validatorConfig
           }
-        } catch (error) {
-
-        }
+        } catch (error) {}
       }
     }
     return result
@@ -130,7 +135,11 @@ function parseLine (line: string): KeyValuePair<string> | null {
   }
 }
 
-function processLineByLine (filename: string = '', isPhysicalFile: boolean = true, variables = {}): LooseObject | null {
+function processLineByLine (
+  filename: string = '',
+  isPhysicalFile: boolean = true,
+  variables = {}
+): LooseObject | null {
   let contents
   if (isPhysicalFile) {
     try {
@@ -164,9 +173,22 @@ function processLineByLine (filename: string = '', isPhysicalFile: boolean = tru
 function dotenvy (options: Options = {}): LooseObject {
   try {
     const finalOptions = Object.assign({}, defaultOptions, options)
-    const config = processLineByLine(finalOptions.exampleFile, finalOptions.isPhysicalFile, finalOptions.lines)
+    const config = processLineByLine(
+      finalOptions.exampleFile,
+      finalOptions.isPhysicalFile,
+      finalOptions.lines
+    )
+
     if (finalOptions.env) Object.assign(process.env, finalOptions.env)
-    const env = envalid.cleanEnv(process.env, config ? config as {} : {}, finalOptions.envalidOptions)
+
+    finalOptions.envalidOptions = finalOptions.envalidOptions || {}
+    finalOptions.envalidOptions.reporter = customReporter
+
+    const env = envalid.cleanEnv(
+      finalOptions.env || process.env,
+      (config as {}) || {},
+      finalOptions.envalidOptions
+    )
     return Object.assign({}, { ...env })
   } catch (ex) {
     if (ex instanceof Error) Logger.error(ex.message)
@@ -175,4 +197,4 @@ function dotenvy (options: Options = {}): LooseObject {
   }
 }
 
-export = dotenvy
+export = dotenvy;
